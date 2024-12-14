@@ -454,8 +454,6 @@ class GUI(QMainWindow, QThread, QApplication):
                 #     self.estimatedHR_and_arrhythmia(self.runAllModels.bpms)
                 
                     # self.avg_bpms.append(np.mean(self.runAllModels.bpms))
-                else:
-                    print("Frame is None")
 
                 self.key_handler()  # if not the GUI cant show anything, to make the gui refresh after the end of loop
                 self.signal_Plt.clear()

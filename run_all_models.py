@@ -2,9 +2,9 @@ import time
 import numpy as np
 import scipy
 from face_detection import FaceDetection
-from funcs2 import BPF_dict
 from predict_bpm import Prediction_bpm
-
+import scipy.signal
+from scipy.signal import butter
 
 class RunAlModels(object):
     def __init__(self):
@@ -64,7 +64,7 @@ class RunAlModels(object):
                 results = {}
                 self.list_infer_arr = self.list_infer_arr[-self.buffer_size:]
                 results[0] = self.list_infer_arr
-                result = BPF_dict(results, self.sampling_rate)
+                result = self.BPF_dict(results, self.sampling_rate)
                 # print("Results: ", result)
                 self.RGB_signal_buffer = result[0]
              
@@ -103,4 +103,19 @@ class RunAlModels(object):
             wo_max_PSD[idx] = np.min(PSD)
             bpm = self.limit_bpm(wo_max_PSD, Frequency, limit)
         return bpm
+    
+    def BPF_dict(self, input_val, fs):
+        for index, signal in input_val.items():
+            signal = np.squeeze(signal)
 
+            if type(fs) == list:
+                low = 0.67 / (0.5 * fs[index])  # Frequency range: 0.67-2.4 Hz
+                high = 2.4 / (0.5 * fs[index])
+            else:
+                low = 0.67 / (0.5 * fs)  # Version1
+                high = 2.4 / (0.5 * fs)
+
+            sos = butter(10, [low, high], btype='bandpass', output='sos')# Design an Nth-order digital or analog Butterworth filter and return the filter coefficients
+            signal = scipy.signal.sosfiltfilt(sos, signal) #A forward-backward digital filter using cascaded second-order sections.
+            input_val[index] = signal
+        return input_val
