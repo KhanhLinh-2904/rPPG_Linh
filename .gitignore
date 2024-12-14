@@ -1,0 +1,58 @@
+
+#Model
+*.pth
+*.txt
+*.pth
+*.dat
+#Dataset
+*.hdf5
+# General settings
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Runtime data
+*.pid
+*.seed
+
+# Compiled source code
+*.class
+*.pyc
+*.o
+*.out
+*.so
+
+# Dependency directories
+node_modules/
+vendor/
+
+# IDE and editor settings
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Operating system files
+*.swp
+*.lock
+
+# Environment variables
+.env
+
+# Temporary files
+*.tmp
+*.bak
+*.old
+
+# Archive files
+*.zip
+*.tar.gz
+*.rar
+
+# Project-specific exclusions
+coverage/
+dist/
+build/
+__pycache__/
