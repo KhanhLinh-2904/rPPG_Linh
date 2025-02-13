@@ -1,6 +1,4 @@
-import os
 import cv2
-os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = '/usr/lib/x86_64-linux-gnu/qt5/plugins/platforms/libqxcb.so'
 import numpy as np
 import pyqtgraph as pg
 import webbrowser
@@ -13,7 +11,8 @@ from webcam import Camera_RGB
 import sys
 import signal
 from PyQt5.QtCore import pyqtSignal
-from multiprocessing import Queue, Process
+from multiprocessing import Queue, Process, freeze_support
+
 class Communicate(QObject):
     closeApp = pyqtSignal()
 
@@ -90,7 +89,7 @@ class GUI(QMainWindow, QThread, QApplication):
 
         # Set the top, bottom, and left labels with font and padding
         self.signal_Plt.setLabel('top', "Photoplethysmographic Estimate HR", font=font)
-        self.signal_Plt.setLabel('bottom', "Time [Second]", font=font)
+        self.signal_Plt.setLabel('bottom', "", font=font)
         self.signal_Plt.setLabel('left', "rPPG Signal", font=font)
 
         self.signal_Plt.getAxis('top').setHeight(60)  # Add padding to the top axis
@@ -135,21 +134,21 @@ class GUI(QMainWindow, QThread, QApplication):
         self.lblHR.setStyleSheet("color:#999797")
         self.lblHR.setText("0")
 
-        # HRV Label 
-        # Display the heart rate variability 
-        self.HRV = QLabel(self)
-        self.HRV.setGeometry(862, 221, 200, 29)
-        self.HRV.setFont(font)
-        self.HRV.setAlignment(Qt.AlignLeft)
-        self.HRV.setStyleSheet("color:#999797")
-        self.HRV.setText("HRV (sec)")
+        # # HRV Label 
+        # # Display the heart rate variability 
+        # self.HRV = QLabel(self)
+        # self.HRV.setGeometry(862, 221, 200, 29)
+        # self.HRV.setFont(font)
+        # self.HRV.setAlignment(Qt.AlignLeft)
+        # self.HRV.setStyleSheet("color:#999797")
+        # self.HRV.setText("HRV (sec)")
         
-        self.lblHRV = QLabel(self)
-        self.lblHRV.setGeometry(1105, 221, 200, 29)
-        self.lblHRV.setFont(font)
-        self.lblHRV.setAlignment(Qt.AlignLeft)
-        self.lblHRV.setStyleSheet("color:#999797")
-        self.lblHRV.setText("0")
+        # self.lblHRV = QLabel(self)
+        # self.lblHRV.setGeometry(1105, 221, 200, 29)
+        # self.lblHRV.setFont(font)
+        # self.lblHRV.setAlignment(Qt.AlignLeft)
+        # self.lblHRV.setStyleSheet("color:#999797")
+        # self.lblHRV.setText("0")
        
         # Frequency Label 
         # Display the Frequency 
@@ -328,8 +327,8 @@ class GUI(QMainWindow, QThread, QApplication):
         self.lblHR.setText("0")
         QApplication.processEvents()
         
-        self.lblHRV.setText("0")
-        QApplication.processEvents()
+        # self.lblHRV.setText("0")
+        # QApplication.processEvents()
         
         self.lblFrequency.setText("0")
         QApplication.processEvents()
@@ -397,30 +396,20 @@ class GUI(QMainWindow, QThread, QApplication):
             if bpm == 0 :
                 return
             rr_interval = 60 / bpm
-            
+            frequency = 1/rr_interval if rr_interval != 0 else 0
             # Append the new RR interval to the list
             self.rr_intervals.append(rr_interval)
             
-            # Calculate HRV as the standard deviation of RR intervals
-            if len(self.rr_intervals) > 1:
-                hrv = np.std(self.rr_intervals)
-            else:
-                hrv = 0  # Default to 0 if we don't have enough data points
-             # Calculate the frequency (inverse of the mean RR interval)
-            mean_rr_interval = np.mean(self.rr_intervals)
-            frequency = 1 / mean_rr_interval if mean_rr_interval != 0 else 0  # Frequency in Hz (beats per second)
-            # Update the HR and HRV labels
             self.lblHR.setText(f"{bpm:.1f}")
             QApplication.processEvents()
-            self.lblHRV.setText(f"{hrv:.2f}")
-            QApplication.processEvents()
+          
             self.lblFrequency.setText(f"{frequency:.2f}") 
             QApplication.processEvents()
             
             
     @QtCore.pyqtSlot()
     def main_loop(self):
-        color_frame = self.input.get_frame()
+        color_frame = self.input.get_frame() #Capture 1 frame from Camera
         if color_frame is not None:
             gui_img = QImage(color_frame, color_frame.shape[1], color_frame.shape[0], color_frame.strides[0],
                             QImage.Format_RGB888)
@@ -430,14 +419,14 @@ class GUI(QMainWindow, QThread, QApplication):
             self.lblDisplay.setPixmap(QPixmap(gui_img))  # show frame on GUI
             QApplication.processEvents()
             while not self.output_queue.empty():
-                (bpm, RGB_signal_buffer, bpms) = self.output_queue.get()
+                (bpm, idx, RGB_signal_buffer, bpms) = self.output_queue.get()
                 self.update_bpm_and_hrv_and_fre(bpm)
             
-                if len(bpms) > 25:
+                if len(bpms) > 15:
                     # print("===========: ",len(self.runAllModels.bpms))
                     # print("self.runAllModels.bpms: ",self.runAllModels.bpms)
                     
-                    for i in range(5, 0, -1):
+                    for i in range(3, 0, -1):
                         try:
                             if(len(bpms[-5 * i:-5 * (i - 1)])==0):
                                 continue
@@ -447,7 +436,7 @@ class GUI(QMainWindow, QThread, QApplication):
                         except:
                             print("lblHR: eror in mean ")
                     self.avg_bpms = np.mean(self.smooth_bpms)
-                    self.update_bpm_and_hrv_and_fre(self.avg_bpms)
+                    # self.update_bpm_and_hrv_and_fre(self.avg_bpms)
                     self.estimatedHR_and_arrhythmia(self.avg_bpms)
 
                 # if self.runAllModels.bpms.__len__() > 1:
@@ -457,7 +446,7 @@ class GUI(QMainWindow, QThread, QApplication):
 
                 self.key_handler()  # if not the GUI cant show anything, to make the gui refresh after the end of loop
                 self.signal_Plt.clear()
-                self.signal_Plt.plot(RGB_signal_buffer, pen='r')  # Plot green signal
+                self.signal_Plt.plot(idx, RGB_signal_buffer, pen='r')  # Plot green signal
         
     def estimatedHR_and_arrhythmia(self, processed_bpm):
         estimated_HR = round(np.mean(processed_bpm))
@@ -504,6 +493,7 @@ def signal_handler(sig, frame):
 
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
+    freeze_support()
     app = QApplication(sys.argv)
     ex = GUI()
     sys.exit(app.exec_())

@@ -6,6 +6,9 @@
 *.dat
 #Dataset
 *.hdf5
+#Images
+*.jpg
+*.png
 # General settings
 .DS_Store
 Thumbs.db
