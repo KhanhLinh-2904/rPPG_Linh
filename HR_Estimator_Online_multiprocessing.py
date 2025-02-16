@@ -57,7 +57,7 @@ class GUI(QMainWindow, QThread, QApplication):
         self.avg_bpms = []
         self.smooth_bpms = []
         self.bpm_count = 0
-        
+        self.countFrame = 0
         
         # Add a list to track RR intervals (in seconds)
         self.rr_intervals = []
@@ -71,12 +71,28 @@ class GUI(QMainWindow, QThread, QApplication):
 
         # display face online (the biggest window)
         self.lblDisplay = QLabel(self)
-        self.lblDisplay.setGeometry(113, 72, 640, 480)
+        self.lblDisplay.setGeometry(113, 90, 568, 396)
         self.lblDisplay.setStyleSheet("background-color: #272626")
         self.lblDisplay.setAlignment(QtCore.Qt.AlignCenter)
 
-      
+        # display mean frame (the biggest window)
+        self.meanDisplay = QLabel(self)
+        self.meanDisplay.setGeometry(778, 46, 245, 203)
+        self.meanDisplay.setStyleSheet("background-color: #272626")
+        self.meanDisplay.setAlignment(QtCore.Qt.AlignCenter)
 
+        # display different frame (the biggest window)
+        self.diffDisplay = QLabel(self)
+        self.diffDisplay.setGeometry(1068, 46, 245, 203)
+        self.diffDisplay.setStyleSheet("background-color: #272626")
+        self.diffDisplay.setAlignment(QtCore.Qt.AlignCenter)
+
+        # display ROI frame (the biggest window)
+        self.roiDisplay = QLabel(self)
+        self.roiDisplay.setGeometry(778, 303, 245, 203)
+        self.roiDisplay.setStyleSheet("background-color: #272626")
+        self.roiDisplay.setAlignment(QtCore.Qt.AlignCenter)
+        
         # dynamic plot # Processed Signal 圖表
         self.signal_Plt = pg.PlotWidget(self)
         self.signal_Plt.setGeometry(113, 591, 1206, 361)
@@ -85,7 +101,7 @@ class GUI(QMainWindow, QThread, QApplication):
         # Create a bold font with padding
         font = QFont()
         font.setBold(True)
-        font.setPointSize(13)  
+        font.setPointSize(9)  
 
         # Set the top, bottom, and left labels with font and padding
         self.signal_Plt.setLabel('top', "Photoplethysmographic Estimate HR", font=font)
@@ -98,69 +114,68 @@ class GUI(QMainWindow, QThread, QApplication):
 
         # display face online (the biggest window)
         self.lblInformation = QLabel(self)
-        self.lblInformation.setGeometry(838, 72, 481, 346)
+        self.lblInformation.setGeometry(1068, 329, 309, 183)
         self.lblInformation.setStyleSheet("background-color: #272626")
         self.lblInformation.setAlignment(QtCore.Qt.AlignCenter)
 
         # Time Label
         #now = QDateTime.currentDateTime()
         self.Duration = QLabel(self)
-        self.Duration.setGeometry(862, 101, 110, 29)
+        self.Duration.setGeometry(1083, 344, 86, 24)
         self.Duration.setFont(font)
         self.Duration.setAlignment(Qt.AlignLeft)
         self.Duration.setStyleSheet("color:#999797")
         self.Duration.setText("Duration")
         
         self.lblTime = QLabel(self)
-        self.lblTime.setGeometry(1105, 101, 150, 29)
+        self.lblTime.setGeometry(1239, 344, 114, 24)
         self.lblTime.setFont(font)
         self.lblTime.setAlignment(Qt.AlignLeft)
         self.lblTime.setStyleSheet("color:#999797")
         self.lblTime.setText("00 : 00 : 00")
         
+      
+        # self.Output = QLabel(self)
+        # self.Output.setGeometry(1083, 369, 98, 29)
+        # self.Output.setFont(font)
+        # self.Output.setAlignment(Qt.AlignLeft)
+        # self.Output.setStyleSheet("color:#999797")
+        # self.Output.setText("Output")
+        
+        # self.lblOutput = QLabel(self)
+        # self.lblOutput.setGeometry(1239, 369, 114, 29)
+        # self.lblOutput.setFont(font)
+        # self.lblOutput.setAlignment(Qt.AlignLeft)
+        # self.lblOutput.setStyleSheet("color:#999797")
+        # self.lblOutput.setText("0")
+
         # HR Label 
-        # Display the heart rate 
+        # Display the heart rate  
         self.HR = QLabel(self)
-        self.HR.setGeometry(862, 161, 200, 29)
+        self.HR.setGeometry(1083, 394, 200, 29)
         self.HR.setFont(font)
         self.HR.setAlignment(Qt.AlignLeft)
         self.HR.setStyleSheet("color:#999797")
         self.HR.setText("HR (bpm)")
         
         self.lblHR = QLabel(self)
-        self.lblHR.setGeometry(1105, 161, 200, 29)
+        self.lblHR.setGeometry(1239, 394, 200, 29)
         self.lblHR.setFont(font)
         self.lblHR.setAlignment(Qt.AlignLeft)
         self.lblHR.setStyleSheet("color:#999797")
         self.lblHR.setText("0")
-
-        # # HRV Label 
-        # # Display the heart rate variability 
-        # self.HRV = QLabel(self)
-        # self.HRV.setGeometry(862, 221, 200, 29)
-        # self.HRV.setFont(font)
-        # self.HRV.setAlignment(Qt.AlignLeft)
-        # self.HRV.setStyleSheet("color:#999797")
-        # self.HRV.setText("HRV (sec)")
-        
-        # self.lblHRV = QLabel(self)
-        # self.lblHRV.setGeometry(1105, 221, 200, 29)
-        # self.lblHRV.setFont(font)
-        # self.lblHRV.setAlignment(Qt.AlignLeft)
-        # self.lblHRV.setStyleSheet("color:#999797")
-        # self.lblHRV.setText("0")
        
         # Frequency Label 
         # Display the Frequency 
         self.Frequency = QLabel(self)
-        self.Frequency.setGeometry(862, 281, 200, 29)
+        self.Frequency.setGeometry(1083, 419, 200, 29)
         self.Frequency.setFont(font)
         self.Frequency.setAlignment(Qt.AlignLeft)
         self.Frequency.setStyleSheet("color:#999797")
         self.Frequency.setText("Frequency (Hz)")
         
         self.lblFrequency = QLabel(self)
-        self.lblFrequency.setGeometry(1105, 281, 200, 29)
+        self.lblFrequency.setGeometry(1239, 419, 200, 29)
         self.lblFrequency.setFont(font)
         self.lblFrequency.setAlignment(Qt.AlignLeft)
         self.lblFrequency.setStyleSheet("color:#999797")
@@ -169,14 +184,14 @@ class GUI(QMainWindow, QThread, QApplication):
         # Heart Arrythmia 
         # Display the Frequency 
         self.HeartArrythmia = QLabel(self)
-        self.HeartArrythmia.setGeometry(862, 341, 250, 29)
+        self.HeartArrythmia.setGeometry(1083, 444, 250, 29)
         self.HeartArrythmia.setFont(font)
         self.HeartArrythmia.setAlignment(Qt.AlignLeft)
         self.HeartArrythmia.setStyleSheet("color:#999797")
         self.HeartArrythmia.setText("Heart Arrythmia")
         
         self.lblHeartArrythmia = QLabel(self)
-        self.lblHeartArrythmia.setGeometry(1105, 341, 250, 29)
+        self.lblHeartArrythmia.setGeometry(1239, 444, 250, 29)
         self.lblHeartArrythmia.setFont(font)
         self.lblHeartArrythmia.setAlignment(Qt.AlignLeft)
         self.lblHeartArrythmia.setStyleSheet("color:#821515")
@@ -186,31 +201,54 @@ class GUI(QMainWindow, QThread, QApplication):
         # Estimated HR Label 
         # Display the estimated heart rate 
         self.EstimatedHR = QLabel(self)
-        self.EstimatedHR.setGeometry(1002, 503, 216, 90)
+        self.EstimatedHR.setGeometry(1083, 469, 216, 90)
         self.EstimatedHR.setFont(font)
         self.EstimatedHR.setAlignment(Qt.AlignLeft)
         self.EstimatedHR.setStyleSheet("color:#FFFFFF")
-        self.EstimatedHR.setText("Estimated HR")
+        self.EstimatedHR.setText("Average HR")
         
         self.lblEstimatedHR = QLabel(self)
-        self.lblEstimatedHR.setGeometry(1030, 539, 88, 29)
+        self.lblEstimatedHR.setGeometry(1239, 469, 114, 29)
         self.lblEstimatedHR.setFont(font)
         self.lblEstimatedHR.setAlignment(Qt.AlignLeft)
         self.lblEstimatedHR.setStyleSheet("color:#F94868")
         self.lblEstimatedHR.setText("0")
 
-        self.lblEstimatedHRtext = QLabel(self)
-        self.lblEstimatedHRtext.setGeometry(1069, 539, 60, 29)
-        self.lblEstimatedHRtext.setFont(font)
-        self.lblEstimatedHRtext.setAlignment(Qt.AlignLeft)
-        self.lblEstimatedHRtext.setStyleSheet("color:#F94868")
-        self.lblEstimatedHRtext.setText("BPM")
+        # self.lblEstimatedHRtext = QLabel(self)
+        # self.lblEstimatedHRtext.setGeometry(1069, 539, 60, 29)
+        # self.lblEstimatedHRtext.setFont(font)
+        # self.lblEstimatedHRtext.setAlignment(Qt.AlignLeft)
+        # self.lblEstimatedHRtext.setStyleSheet("color:#F94868")
+        # self.lblEstimatedHRtext.setText("BPM")
 
-        self.lblCCU_Logo1 = QLabel(self)
-        self.lblCCU_Logo1.setGeometry(1140, 540, 20, 20)
-        self.lblCCU_Logo1.setStyleSheet(
-            "QLabel{border-image: url(./IMG_Source/Heart_icon.png);}")
+        # self.lblCCU_Logo1 = QLabel(self)
+        # self.lblCCU_Logo1.setGeometry(1140, 540, 20, 20)
+        # self.lblCCU_Logo1.setStyleSheet(
+        #     "QLabel{border-image: url(./IMG_Source/Heart_icon.png);}")
 
+
+        # Infor GUI show
+        
+        self.textMF = QLabel(self)
+        self.textMF.setGeometry(830, 262, 146, 26)
+        self.textMF.setFont(font)
+        self.textMF.setAlignment(Qt.AlignLeft)
+        self.textMF.setStyleSheet("color:#FFFFFF")
+        self.textMF.setText("Mean frame")
+        
+        self.textDF = QLabel(self)
+        self.textDF.setGeometry(1091, 262, 194, 26)
+        self.textDF.setFont(font)
+        self.textDF.setAlignment(Qt.AlignLeft)
+        self.textDF.setStyleSheet("color:#FFFFFF")
+        self.textDF.setText("Different frame")
+        
+        self.textROI = QLabel(self)
+        self.textROI.setGeometry(877, 521, 146, 26)
+        self.textROI.setFont(font)
+        self.textROI.setAlignment(Qt.AlignLeft)
+        self.textROI.setStyleSheet("color:#FFFFFF")
+        self.textROI.setText("ROI")
         # CCU Logo1 button
         # National Chung Cheng University
         self.lblCCU_Logo1 = QLabel(self)
@@ -233,7 +271,7 @@ class GUI(QMainWindow, QThread, QApplication):
         buttonFont.setPointSize(10)  
         # START button
         self.btnStart = QPushButton("START", self)
-        self.btnStart.setGeometry(842, 449, 80, 30)
+        self.btnStart.setGeometry(184, 526, 80, 30)
         self.btnStart.setFont(buttonFont)
         self.btnStart.setStyleSheet("QPushButton{color: #230CF2 ; background-color: #A09A9A; border-radius: 10px; border: 2px groove gray;border-style: outset;}"
                                     "QPushButton:hover{color: #110388;}"
@@ -243,7 +281,7 @@ class GUI(QMainWindow, QThread, QApplication):
 
         # STOP button
         self.btnStop = QPushButton("STOP", self)
-        self.btnStop.setGeometry(1032, 449, 80, 30)
+        self.btnStop.setGeometry(344, 526, 80, 30)
         self.btnStop.setFont(buttonFont)
         self.btnStop.setStyleSheet("QPushButton{color: #FF0606 ;background-color: #A09A9A;  border-radius: 10px; border: 2px groove gray;border-style: outset;}"
                                    "QPushButton:hover{color: #873131;}"
@@ -253,7 +291,7 @@ class GUI(QMainWindow, QThread, QApplication):
         
         # RESET button
         self.btnReset = QPushButton("RESET", self)
-        self.btnReset.setGeometry(1221, 449, 80, 30)
+        self.btnReset.setGeometry(504, 526, 80, 30)
         self.btnReset.setFont(buttonFont)
         self.btnReset.setStyleSheet("QPushButton{color: #E16D07 ;background-color: #A09A9A;  border-radius: 10px; border: 2px groove gray;border-style: outset;}"
                                    "QPushButton:hover{color: #964E0E;}"
@@ -373,7 +411,10 @@ class GUI(QMainWindow, QThread, QApplication):
         if reply == QMessageBox.Yes:
             event.accept()
             self.input.stop()
+            self.running = False
             cv2.destroyAllWindows()
+            app.quit()
+            # sys.exit(app.exec_())
         else:
             event.ignore()
 
@@ -390,7 +431,7 @@ class GUI(QMainWindow, QThread, QApplication):
             self.input.stop()
   
 
-    def update_bpm_and_hrv_and_fre(self, bpm):
+    def update_bpm_and_fre(self, bpm):
             """This method updates the BPM and calculates HRV."""
             # Calculate RR interval from BPM (in seconds)
             if bpm == 0 :
@@ -400,7 +441,7 @@ class GUI(QMainWindow, QThread, QApplication):
             # Append the new RR interval to the list
             self.rr_intervals.append(rr_interval)
             
-            self.lblHR.setText(f"{bpm:.1f}")
+            self.lblHR.setText(f"{bpm:.2f}")
             QApplication.processEvents()
           
             self.lblFrequency.setText(f"{frequency:.2f}") 
@@ -414,14 +455,56 @@ class GUI(QMainWindow, QThread, QApplication):
             gui_img = QImage(color_frame, color_frame.shape[1], color_frame.shape[0], color_frame.strides[0],
                             QImage.Format_RGB888)
             color_frame = cv2.cvtColor(color_frame, cv2.COLOR_BGR2RGB)
+            # print("shape of color frame: ", color_frame.shape)
             self.input_queue.put({"frame": color_frame})
             
             self.lblDisplay.setPixmap(QPixmap(gui_img))  # show frame on GUI
             QApplication.processEvents()
             while not self.output_queue.empty():
-                (bpm, idx, RGB_signal_buffer, bpms) = self.output_queue.get()
-                self.update_bpm_and_hrv_and_fre(bpm)
-            
+                (color_face, dif_frame, mean_frame, outputs, bpm, idx, RGB_signal_buffer, bpms) = self.output_queue.get()
+                if color_face is not None:
+                    color_face = cv2.cvtColor(color_face, cv2.COLOR_BGR2RGB)
+                    # print("type color_face: ", type(color_face))
+                    color_face = cv2.resize(color_face, (180, 180), interpolation=cv2.INTER_CUBIC)
+                    # print("shape color_face:", color_face.shape)
+                    
+                    # reshape color_face (240, 240)
+                    gui_face = QImage(color_face, color_face.shape[1], color_face.shape[0], color_face.strides[0],
+                                    QImage.Format_RGB888)
+                    self.roiDisplay.setPixmap(QPixmap(gui_face))
+                    QApplication.processEvents()
+                    
+                # if isinstance(outputs, np.ndarray):
+                #     for inum in outputs[0]:
+                #         # self.countFrame += 1
+                #         # print("Frame ", self.countFrame ,inum)
+                #         self.lblOutput.setText(f"{inum:.2f}")
+                #         QApplication.processEvents()
+                        
+                #         # self.Output.setText(f"Output {self.countFrame}")
+                #         # QApplication.processEvents()
+                        
+                
+                if dif_frame is not None:
+                    
+                    # dif_frame = cv2.cvtColor(dif_frame, cv2.COLOR_BGR2RGB)
+                    dif_frame = cv2.resize(dif_frame, (180, 180), interpolation=cv2.INTER_CUBIC)
+                    # print("type of dif_frame: ", type(dif_frame))
+                    # print("shape dif_frame: ",dif_frame.shape )
+                    gui_dif_face = QImage(dif_frame, dif_frame.shape[1], dif_frame.shape[0], dif_frame.strides[0],
+                                    QImage.Format_RGB888)
+                    self.diffDisplay.setPixmap(QPixmap(gui_dif_face))
+                    
+                    QApplication.processEvents()
+                if mean_frame is not None:
+                    mean_frame = cv2.cvtColor(mean_frame, cv2.COLOR_BGR2RGB)
+                    mean_frame = cv2.resize(mean_frame, (180, 180), interpolation=cv2.INTER_CUBIC)
+                    gui_mean_face = QImage(mean_frame, mean_frame.shape[1], mean_frame.shape[0], mean_frame.strides[0],
+                                    QImage.Format_RGB888)
+                    self.meanDisplay.setPixmap(QPixmap(gui_mean_face))
+                    
+                self.update_bpm_and_fre(bpm)
+                
                 if len(bpms) > 15:
                     # print("===========: ",len(self.runAllModels.bpms))
                     # print("self.runAllModels.bpms: ",self.runAllModels.bpms)

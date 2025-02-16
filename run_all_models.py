@@ -5,7 +5,7 @@ from face_detection import FaceDetection
 from predict_bpm import Prediction_bpm
 import scipy.signal
 from scipy.signal import butter
-
+from face_segment import FaceSegment
 class RunAlModels(object):
     def __init__(self):
         self.sampling_rate = 30  # Frame rate of the video input
@@ -14,6 +14,7 @@ class RunAlModels(object):
         self.buffer_size = self.sampling_rate * self.length
         self.RGB_signal_buffer = []
         self.fd = FaceDetection()
+        self.fs = FaceSegment()
         self.count = 0  # The second condition to stop the app
         self.MTTS_CSTM = Prediction_bpm()
         self.bpms = []
@@ -24,20 +25,18 @@ class RunAlModels(object):
         self.new_list_infer_arr = []
         self.indx = []
         self.bpm = 0
+        self.outputs = 0
         
 
     def generate_motion_difference(self, prev_frame, cur_frame):
-        # print("prev_frame: ", prev_frame.shape)
-        # print("cur_frame: ", cur_frame.shape)
-        
         prev_frame = prev_frame.astype(np.float32)
         cur_frame = cur_frame.astype(np.float32)
-        dif_frame = (cur_frame - prev_frame) / (cur_frame + prev_frame + 1)
+        dif_frame = (cur_frame - prev_frame) 
         return dif_frame
 
     def process_model(self, arr_motion, arr_appearance):
         outputs = self.MTTS_CSTM.predict_bpm(arr_appearance, arr_motion)
-            # print("Outputs: ", len(outputs))
+        # print("Outputs: ", outputs)
             
         inference_array = np.reshape(outputs.cpu().detach().numpy(), (1, -1))
         # print("type inference_array: ", type(inference_array))
@@ -67,23 +66,26 @@ class RunAlModels(object):
             self.bpms.append(self.bpm)
             # print("bpms len: ", len(self.bpms))
             # =======
+        return inference_array
         
     
     def run(self, rgb_frame):
-        bpm = 0.
+        dif_frame = None
+        mean_frame = None
         color_face = self.fd.face_detect(rgb_frame)
-        print("self.count: ",self.count)
+        # print("self.count: ",self.count)
         if color_face is not None:
+            # color_face = self.fs.face_segment(color_face)
             if self.count % (self.T +1) == 0:
                 if self.count != 0:
                     self.app_frames = self.app_frames[-10:]
                     arr_motion = np.array(self.motion_frames)
                     arr_appearance = np.array(self.app_frames)
-                    print("==========")
-                    print("arr_motion: ", arr_motion.shape)
-                    print("arr_appearance: ", arr_appearance.shape)
-                    
-                    self.process_model( arr_motion,arr_appearance)
+                    mean_frame = np.mean(np.array(self.app_frames), axis=0).astype(np.uint8)
+                    # print("==========")
+                    # print("arr_motion: ", arr_motion.shape)
+                    # print("arr_appearance: ", arr_appearance.shape)
+                    self.outputs = self.process_model( arr_motion,arr_appearance)
                 self.app_frames  = []
                 self.motion_frames = []
                 self.app_frames.append(color_face)
@@ -91,11 +93,13 @@ class RunAlModels(object):
                 prev_frame = self.app_frames[-1]
                 cur_frame = color_face
                 self.app_frames.append(color_face)
+                # mean frame
+                
                 dif_frame = self.generate_motion_difference(prev_frame, cur_frame)
                 self.motion_frames.append(dif_frame)
             self.count += 1
         # print("type self.RGB_signal_buffer: ", type(self.RGB_signal_buffer))
-        return (self.bpm, self.indx, self.RGB_signal_buffer, self.bpms)
+        return (color_face, dif_frame,mean_frame, self.outputs, self.bpm, self.indx, self.RGB_signal_buffer, self.bpms)
 
     def reset(self):
         self.RGB_signal_buffer = []

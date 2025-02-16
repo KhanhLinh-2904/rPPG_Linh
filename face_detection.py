@@ -24,8 +24,11 @@ class FaceDetection(object):
         if len(rects) > 0:
             (x, y, w, h) = face_utils.rect_to_bb(rects[0])
             bbox = (x, y, w, h)
-            face_frame =frame[bbox[1]:bbox[1]+int(bbox[3]), bbox[0]:bbox[0]+bbox[2]].copy()
-            self.tracker1.init(frame, bbox)
+            # face_frame =frame[bbox[1]:bbox[1]+int(bbox[3]), bbox[0]:bbox[0]+bbox[2]].copy()
+            face_frame = frame[max(y-int(0.5*h), 0):min(y+int(h*1), frame.shape[0]), 
+                   x:min(x+int(w*1), frame.shape[1])].copy()
+          
+            # self.tracker1.init(frame, bbox)
         else:
             print("failed detect face")
             return None
