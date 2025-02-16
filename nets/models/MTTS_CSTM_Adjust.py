@@ -1,7 +1,7 @@
 import torch
 from nets.models.sub_models.AppearanceModel import AppearanceModel_2D
-from nets.models.sub_models.MotionModel import MotionModel_TS_CSTM    # Input_ROI_size=36*36
-from nets.models.sub_models.LinearModel import LinearModel_TS_CSTM    # Input_ROI_size=36*36
+from nets.models.sub_models.MotionModel_72 import MotionModel_TS_CSTM    # Input_ROI_size=36*36
+from nets.models.sub_models.LinearModel_72 import LinearModel_TS_CSTM    # Input_ROI_size=36*36
 from torchvision import transforms
 import numpy as np
 

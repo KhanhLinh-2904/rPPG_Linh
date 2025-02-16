@@ -32,7 +32,7 @@ class FaceDetection(object):
         else:
             print("failed detect face")
             return None
-        face_frame = cv2.resize(face_frame, (36,36), dst=None, fx=0, fy=0, interpolation=cv2.INTER_LINEAR)
+        face_frame = cv2.resize(face_frame, (72,72), dst=None, fx=0, fy=0, interpolation=cv2.INTER_LINEAR)
         return face_frame
  
 
@@ -50,7 +50,7 @@ class FaceDetection(object):
         else:
             print("Update Tracker failure")
             return None
-        face_frame = cv2.resize(face_frame, (36,36), dst=None, fx=0, fy=0, interpolation=cv2.INTER_LINEAR)
+        face_frame = cv2.resize(face_frame, (72,72), dst=None, fx=0, fy=0, interpolation=cv2.INTER_LINEAR)
 
         return face_frame
 

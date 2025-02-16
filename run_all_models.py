@@ -36,26 +36,17 @@ class RunAlModels(object):
 
     def process_model(self, arr_motion, arr_appearance):
         outputs = self.MTTS_CSTM.predict_bpm(arr_appearance, arr_motion)
-        # print("Outputs: ", outputs)
-            
         inference_array = np.reshape(outputs.cpu().detach().numpy(), (1, -1))
-        # print("type inference_array: ", type(inference_array))
-        # print("shape inference_array: ", inference_array.shape) (=10)
-        # print("inference_array: ", inference_array)
+      
         self.list_infer_arr = np. append(self.list_infer_arr, inference_array)
-        # print("list_infer_arr: ", self.list_infer_arr)
         length = len(self.list_infer_arr)
         self.indx = np.arange(length - self.buffer_size, length)
         print("length: ", length)
         if length >= self.buffer_size:
-            # =======
             self.new_list_infer_arr = self.list_infer_arr[-self.buffer_size:]
             self.RGB_signal_buffer  = self.BPF_dict(self.new_list_infer_arr, self.sampling_rate)
-            # print("self.RGB_signal_buffer: ", len(self.RGB_signal_buffer)) = 300
             self.freqOuput = np.abs(scipy.fft.rfft(self.RGB_signal_buffer, n=5*len(self.RGB_signal_buffer))) / len(self.RGB_signal_buffer)
-            # print("self.freqOuput: ", self.freqOuput)
             self.FREQUENCY = scipy.fft.rfftfreq(n=5*self.buffer_size, d=(1 / self.sampling_rate))
-            # print("self.FREQUENCY: ", self.FREQUENCY)
             self.FREQUENCY *= 60
             idx = np.argmax(self.freqOuput)
             if not np.isnan(self.bpm):
@@ -64,8 +55,7 @@ class RunAlModels(object):
             else:
                 print("nan value")
             self.bpms.append(self.bpm)
-            # print("bpms len: ", len(self.bpms))
-            # =======
+          
         return inference_array
         
     
@@ -73,18 +63,13 @@ class RunAlModels(object):
         dif_frame = None
         mean_frame = None
         color_face = self.fd.face_detect(rgb_frame)
-        # print("self.count: ",self.count)
         if color_face is not None:
-            # color_face = self.fs.face_segment(color_face)
             if self.count % (self.T +1) == 0:
                 if self.count != 0:
                     self.app_frames = self.app_frames[-10:]
                     arr_motion = np.array(self.motion_frames)
                     arr_appearance = np.array(self.app_frames)
                     mean_frame = np.mean(np.array(self.app_frames), axis=0).astype(np.uint8)
-                    # print("==========")
-                    # print("arr_motion: ", arr_motion.shape)
-                    # print("arr_appearance: ", arr_appearance.shape)
                     self.outputs = self.process_model( arr_motion,arr_appearance)
                 self.app_frames  = []
                 self.motion_frames = []
@@ -93,12 +78,9 @@ class RunAlModels(object):
                 prev_frame = self.app_frames[-1]
                 cur_frame = color_face
                 self.app_frames.append(color_face)
-                # mean frame
-                
                 dif_frame = self.generate_motion_difference(prev_frame, cur_frame)
                 self.motion_frames.append(dif_frame)
             self.count += 1
-        # print("type self.RGB_signal_buffer: ", type(self.RGB_signal_buffer))
         return (color_face, dif_frame,mean_frame, self.outputs, self.bpm, self.indx, self.RGB_signal_buffer, self.bpms)
 
     def reset(self):

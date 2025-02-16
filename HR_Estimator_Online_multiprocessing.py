@@ -133,21 +133,6 @@ class GUI(QMainWindow, QThread, QApplication):
         self.lblTime.setAlignment(Qt.AlignLeft)
         self.lblTime.setStyleSheet("color:#999797")
         self.lblTime.setText("00 : 00 : 00")
-        
-      
-        # self.Output = QLabel(self)
-        # self.Output.setGeometry(1083, 369, 98, 29)
-        # self.Output.setFont(font)
-        # self.Output.setAlignment(Qt.AlignLeft)
-        # self.Output.setStyleSheet("color:#999797")
-        # self.Output.setText("Output")
-        
-        # self.lblOutput = QLabel(self)
-        # self.lblOutput.setGeometry(1239, 369, 114, 29)
-        # self.lblOutput.setFont(font)
-        # self.lblOutput.setAlignment(Qt.AlignLeft)
-        # self.lblOutput.setStyleSheet("color:#999797")
-        # self.lblOutput.setText("0")
 
         # HR Label 
         # Display the heart rate  
@@ -213,19 +198,6 @@ class GUI(QMainWindow, QThread, QApplication):
         self.lblEstimatedHR.setAlignment(Qt.AlignLeft)
         self.lblEstimatedHR.setStyleSheet("color:#F94868")
         self.lblEstimatedHR.setText("0")
-
-        # self.lblEstimatedHRtext = QLabel(self)
-        # self.lblEstimatedHRtext.setGeometry(1069, 539, 60, 29)
-        # self.lblEstimatedHRtext.setFont(font)
-        # self.lblEstimatedHRtext.setAlignment(Qt.AlignLeft)
-        # self.lblEstimatedHRtext.setStyleSheet("color:#F94868")
-        # self.lblEstimatedHRtext.setText("BPM")
-
-        # self.lblCCU_Logo1 = QLabel(self)
-        # self.lblCCU_Logo1.setGeometry(1140, 540, 20, 20)
-        # self.lblCCU_Logo1.setStyleSheet(
-        #     "QLabel{border-image: url(./IMG_Source/Heart_icon.png);}")
-
 
         # Infor GUI show
         
@@ -364,10 +336,7 @@ class GUI(QMainWindow, QThread, QApplication):
         # Reset all labels to initial state
         self.lblHR.setText("0")
         QApplication.processEvents()
-        
-        # self.lblHRV.setText("0")
-        # QApplication.processEvents()
-        
+     
         self.lblFrequency.setText("0")
         QApplication.processEvents()
         
@@ -455,7 +424,6 @@ class GUI(QMainWindow, QThread, QApplication):
             gui_img = QImage(color_frame, color_frame.shape[1], color_frame.shape[0], color_frame.strides[0],
                             QImage.Format_RGB888)
             color_frame = cv2.cvtColor(color_frame, cv2.COLOR_BGR2RGB)
-            # print("shape of color frame: ", color_frame.shape)
             self.input_queue.put({"frame": color_frame})
             
             self.lblDisplay.setPixmap(QPixmap(gui_img))  # show frame on GUI
@@ -464,33 +432,14 @@ class GUI(QMainWindow, QThread, QApplication):
                 (color_face, dif_frame, mean_frame, outputs, bpm, idx, RGB_signal_buffer, bpms) = self.output_queue.get()
                 if color_face is not None:
                     color_face = cv2.cvtColor(color_face, cv2.COLOR_BGR2RGB)
-                    # print("type color_face: ", type(color_face))
                     color_face = cv2.resize(color_face, (180, 180), interpolation=cv2.INTER_CUBIC)
-                    # print("shape color_face:", color_face.shape)
-                    
-                    # reshape color_face (240, 240)
                     gui_face = QImage(color_face, color_face.shape[1], color_face.shape[0], color_face.strides[0],
                                     QImage.Format_RGB888)
                     self.roiDisplay.setPixmap(QPixmap(gui_face))
                     QApplication.processEvents()
-                    
-                # if isinstance(outputs, np.ndarray):
-                #     for inum in outputs[0]:
-                #         # self.countFrame += 1
-                #         # print("Frame ", self.countFrame ,inum)
-                #         self.lblOutput.setText(f"{inum:.2f}")
-                #         QApplication.processEvents()
-                        
-                #         # self.Output.setText(f"Output {self.countFrame}")
-                #         # QApplication.processEvents()
-                        
                 
                 if dif_frame is not None:
-                    
-                    # dif_frame = cv2.cvtColor(dif_frame, cv2.COLOR_BGR2RGB)
                     dif_frame = cv2.resize(dif_frame, (180, 180), interpolation=cv2.INTER_CUBIC)
-                    # print("type of dif_frame: ", type(dif_frame))
-                    # print("shape dif_frame: ",dif_frame.shape )
                     gui_dif_face = QImage(dif_frame, dif_frame.shape[1], dif_frame.shape[0], dif_frame.strides[0],
                                     QImage.Format_RGB888)
                     self.diffDisplay.setPixmap(QPixmap(gui_dif_face))
@@ -506,26 +455,17 @@ class GUI(QMainWindow, QThread, QApplication):
                 self.update_bpm_and_fre(bpm)
                 
                 if len(bpms) > 15:
-                    # print("===========: ",len(self.runAllModels.bpms))
-                    # print("self.runAllModels.bpms: ",self.runAllModels.bpms)
-                    
+                
                     for i in range(3, 0, -1):
                         try:
                             if(len(bpms[-5 * i:-5 * (i - 1)])==0):
                                 continue
                             self.smooth_bpms.append(np.mean(bpms[-5 * i:-5 * (i - 1)]))
-                            # print("self.smooth_bpms: ",self.smooth_bpms)
 
                         except:
                             print("lblHR: eror in mean ")
                     self.avg_bpms = np.mean(self.smooth_bpms)
-                    # self.update_bpm_and_hrv_and_fre(self.avg_bpms)
                     self.estimatedHR_and_arrhythmia(self.avg_bpms)
-
-                # if self.runAllModels.bpms.__len__() > 1:
-                #     self.estimatedHR_and_arrhythmia(self.runAllModels.bpms)
-                
-                    # self.avg_bpms.append(np.mean(self.runAllModels.bpms))
 
                 self.key_handler()  # if not the GUI cant show anything, to make the gui refresh after the end of loop
                 self.signal_Plt.clear()

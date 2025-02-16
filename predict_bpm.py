@@ -13,14 +13,16 @@ class Prediction_bpm(object):
             [0.0252121, 0.03166188, 0.0509791]
         ]
         self.frame_depth = 10
-        self.shift_factor = 0.625
+        self.shift_factor = 0.25
         self.skip_connection = True
         self.new_group_tsm = False
         self.model = self.init_model()
         
     def init_model(self):
         model = MTTS_CSTM(frame_depth = self.frame_depth, pop_mean=self.pop_mean, pop_std=self.pop_std, shift_factor=self.shift_factor, skip=self.skip_connection, group_on=self.new_group_tsm)
-        checkpoint = torch.load('checkpoint_MMSE/shift_0.625/MTTS_CSTM_MMSE_T_10_shift_0.625_combined_loss_best_model_1.pth',  map_location=torch.device('cpu'))
+        checkpoint = torch.load('checkpoint_MMSE/shift_0.25/MTTS_CSTM_PURE_T_10_shift_0.25_combined_loss_best_model_1.pth',  map_location=torch.device('cpu'))
+        # print("Expected input size:", model.input_size)
+        
         model.load_state_dict(checkpoint["model"])        
         model.eval() 
         return model
@@ -32,7 +34,6 @@ class Prediction_bpm(object):
         tensor_motion = torch.tensor(arr_motion)
         combined_tensor = torch.stack([ tensor_motion, tensor_app], dim=0)
         inputs = combined_tensor.permute(0, 1, 4, 2, 3).unsqueeze(0)
-        # print('inputs: ', inputs)
         return inputs
     
     
