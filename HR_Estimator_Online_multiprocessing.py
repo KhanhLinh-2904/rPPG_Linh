@@ -241,7 +241,7 @@ class GUI(QMainWindow, QThread, QApplication):
         self.textDF.setFont(font)
         self.textDF.setAlignment(Qt.AlignLeft)
         self.textDF.setStyleSheet("color:#FFFFFF")
-        self.textDF.setText("Different frame")
+        self.textDF.setText("ROI 36x36")
         
         self.textROI = QLabel(self)
         self.textROI.setGeometry(877, 521, 146, 26)
@@ -484,18 +484,28 @@ class GUI(QMainWindow, QThread, QApplication):
                 #         # self.Output.setText(f"Output {self.countFrame}")
                 #         # QApplication.processEvents()
                         
-                
-                if dif_frame is not None:
+                if color_face is not None:
                     
-                    # dif_frame = cv2.cvtColor(dif_frame, cv2.COLOR_BGR2RGB)
-                    dif_frame = cv2.resize(dif_frame, (180, 180), interpolation=cv2.INTER_CUBIC)
+                    color_face = cv2.resize(color_face, (36, 36), interpolation=cv2.INTER_CUBIC)
                     # print("type of dif_frame: ", type(dif_frame))
                     # print("shape dif_frame: ",dif_frame.shape )
-                    gui_dif_face = QImage(dif_frame, dif_frame.shape[1], dif_frame.shape[0], dif_frame.strides[0],
+                    gui_dif_face = QImage(color_face, color_face.shape[1], color_face.shape[0], color_face.strides[0],
                                     QImage.Format_RGB888)
                     self.diffDisplay.setPixmap(QPixmap(gui_dif_face))
                     
                     QApplication.processEvents()
+                # if dif_frame is not None:
+                    
+                #     # dif_frame = cv2.cvtColor(dif_frame, cv2.COLOR_BGR2RGB)
+                #     dif_frame = cv2.resize(dif_frame, (180, 180), interpolation=cv2.INTER_CUBIC)
+                #     # print("type of dif_frame: ", type(dif_frame))
+                #     # print("shape dif_frame: ",dif_frame.shape )
+                #     gui_dif_face = QImage(dif_frame, dif_frame.shape[1], dif_frame.shape[0], dif_frame.strides[0],
+                #                     QImage.Format_RGB888)
+                #     self.diffDisplay.setPixmap(QPixmap(gui_dif_face))
+                    
+                #     QApplication.processEvents()
+                    
                 if mean_frame is not None:
                     mean_frame = cv2.cvtColor(mean_frame, cv2.COLOR_BGR2RGB)
                     mean_frame = cv2.resize(mean_frame, (180, 180), interpolation=cv2.INTER_CUBIC)
