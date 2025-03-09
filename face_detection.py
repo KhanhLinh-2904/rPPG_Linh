@@ -59,7 +59,6 @@ class FaceDetection(object):
             # Điều chỉnh vị trí ROI sao cho mũi luôn ở trung tâm
             roi_x = nose_x - w // 2
             roi_y = nose_y - h // 2
-            print("roi_x, roi_y, w, h:", roi_x, roi_y , w, h)
             # Đảm bảo ROI không vượt ra ngoài khung hình
             roi_x = max(0, min(roi_x, frame.shape[1] - w))
             roi_y = max(0, min(roi_y, frame.shape[0] - h))

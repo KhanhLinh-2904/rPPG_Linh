@@ -19,7 +19,6 @@ class RunAlModels(object):
         self.count = 0  # The second condition to stop the app
         self.MTTS_CSTM = Prediction_bpm()
         self.bpms = []
-        self.T = 10
         self.motion_frames = []
         self.app_frames = []
         self.list_infer_arr = []
@@ -27,8 +26,12 @@ class RunAlModels(object):
         self.indx = []
         self.bpm = 0
         self.outputs = 0
-        
-
+        self.label = np.load("dataset/label_PURE.npy")
+        self.ten_label = []
+        self.predict = 0
+        self.groundtruth = 0
+        self.mae = 0
+        self.rmse = 0
     def generate_motion_difference(self, prev_frame, cur_frame):
         prev_frame = prev_frame.astype(np.float32)
         cur_frame = cur_frame.astype(np.float32)
@@ -37,7 +40,7 @@ class RunAlModels(object):
 
     def process_model(self, arr_motion, arr_appearance):
         outputs = self.MTTS_CSTM.predict_bpm(arr_appearance, arr_motion)
-        # print("Outputs: ", outputs)
+        # print("Outputs: ", outputs.size())
             
         inference_array = np.reshape(outputs.cpu().detach().numpy(), (1, -1))
         # print("type inference_array: ", type(inference_array))
@@ -74,34 +77,42 @@ class RunAlModels(object):
         dif_frame = None
         mean_frame = None
         color_face_non_resized = self.fd.face_landmark(rgb_frame)
-        # print("self.count: ",self.count)
         if color_face_non_resized is not None:
             # color_face = self.fs.face_segment(color_face)
             color_face = cv2.resize(color_face_non_resized, (36,36), dst=None, fx=0, fy=0, interpolation=cv2.INTER_CUBIC)
-            if self.count % (self.T +1) == 0:
-                if self.count != 0:
-                    self.app_frames = self.app_frames[-10:]
-                    arr_motion = np.array(self.motion_frames)
-                    arr_appearance = np.array(self.app_frames)
-                    mean_frame = np.mean(np.array(self.app_frames), axis=0).astype(np.uint8)
-                    # print("==========")
-                    # print("arr_motion: ", arr_motion.shape)
-                    # print("arr_appearance: ", arr_appearance.shape)
-                    self.outputs = self.process_model( arr_motion,arr_appearance)
-                self.app_frames  = []
-                self.motion_frames = []
+            # check if app_frames is None:
+            if len(self.app_frames) == 0:
                 self.app_frames.append(color_face)
+            elif len(self.motion_frames) == 10 and len(self.app_frames) == 11:
+                new_app_frames = self.app_frames[:10]
+                last_app_frames = self.app_frames[-1]
+                arr_motion = np.array(self.motion_frames)
+                arr_appearance = np.array(new_app_frames)
+                mean_frame = np.mean(np.array(new_app_frames), axis=0).astype(np.uint8)
+                
+                self.outputs = self.process_model( arr_motion,arr_appearance)
+                self.predict = np.mean(self.outputs)
+                print("self.outputs: ", self.outputs)
+                
+                self.ten_label = self.label[self.count:self.count + self.length]
+                print("Range: ", self.count+1, self.count + self.length)
+                self.groundtruth = np.mean(self.ten_label)
+                print("self.ten_label: ", self.ten_label)
+                
+                self.mae = np.mean(np.abs(self.ten_label - self.outputs))
+                self.rmse = np.sqrt(np.mean((self.ten_label - self.outputs) ** 2))
+                self.app_frames = []
+                self.app_frames.append(last_app_frames)
+                self.motion_frames = []
+                self.count += 10
             else:
                 prev_frame = self.app_frames[-1]
                 cur_frame = color_face
-                self.app_frames.append(color_face)
-                # mean frame
-                
                 dif_frame = self.generate_motion_difference(prev_frame, cur_frame)
                 self.motion_frames.append(dif_frame)
-            self.count += 1
+                self.app_frames.append(color_face)
         # print("type self.RGB_signal_buffer: ", type(self.RGB_signal_buffer))
-        return (color_face_non_resized, dif_frame,mean_frame, self.outputs, self.bpm, self.indx, self.RGB_signal_buffer, self.bpms)
+        return (color_face_non_resized,mean_frame, self.predict, self.groundtruth, self.mae,self.rmse, self.bpm, self.indx, self.RGB_signal_buffer, self.bpms)
 
     def reset(self):
         self.RGB_signal_buffer = []
