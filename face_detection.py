@@ -36,7 +36,7 @@ class FaceDetection(object):
             return None
         
  
-    def face_landmark(self, frame):
+    def face_landmark_nose(self, frame):
         if frame is None:
             print("No frame to do face detection")
             return None
@@ -73,7 +73,52 @@ class FaceDetection(object):
         else:
             print("failed detect face")
             return None
-      
+    
+     
+        
+    def face_landmark_center(self, frame):
+        if frame is None:
+            print("No frame to do face detection")
+            return None
+        if len(frame.shape) == 3:
+            gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+        else:
+            gray = frame.copy()
+        
+        rects = self.detector(gray, 1)
+        if len(rects) > 0:
+            (x, y, w, h) = face_utils.rect_to_bb(rects[0])
+            bbox = (x, y, w, h)
+            landmarks = self.landmark_predictor(gray, rects[0])
+           # Extract eyebrow and chin landmarks
+            eyebrow_indices = list(range(17, 27))  # Both left and right eyebrows
+            chin_indices = list(range(0, 17))  # Chin contour
+
+            eyebrow_points = get_landmark_points(landmarks, eyebrow_indices)
+            chin_points = get_landmark_points(landmarks, chin_indices)
+
+            # Compute bounding box
+            center_x, center_y, width, height, x_min, y_min, x_max, y_max = compute_bounding_box(eyebrow_points, chin_points)
+            # Điều chỉnh vị trí ROI sao cho mũi luôn ở trung tâm
+            width = int(width*1.4)
+            height =int(height*1.4)
+            roi_x = center_x - width // 2
+            roi_y = center_y - height // 2
+            # Đảm bảo ROI không vượt ra ngoài khung hình
+            roi_x = max(0, min(roi_x, frame.shape[1] - width))
+            roi_y = max(0, min(roi_y, frame.shape[0] - height))
+
+            # Cắt ảnh theo ROI ổn định
+            stable_face_frame = frame[roi_y:roi_y + width, roi_x:roi_x +  height]
+
+            # # Resize ROI về 36x36
+            # stable_face_frame_resized = cv2.resize(stable_face_frame, (36, 36), interpolation=cv2.INTER_CUBIC)
+            return stable_face_frame
+          
+        else:
+            print("failed detect face")
+            return None
+        
             
     def face_track(self, frame):
         if frame is None:
@@ -94,5 +139,21 @@ class FaceDetection(object):
         return face_frame
 
    
+def get_landmark_points(landmarks, indices):
+    """ Extract points based on landmark indices """
+    return np.array([(landmarks.part(i).x, landmarks.part(i).y) for i in indices])
 
-  
+def compute_bounding_box(eyebrows, chin):
+    """ Compute the bounding box based on eyebrow and chin points """
+    x_min = min(eyebrows[:, 0])
+    x_max = max(eyebrows[:, 0])
+    y_min = min(eyebrows[:, 1])
+    y_max = max(chin[:, 1])
+
+    # Compute center, width, height
+    center_x = (x_min + x_max) // 2
+    center_y = (y_min + y_max) // 2
+    width = x_max - x_min
+    height = y_max - y_min
+
+    return (center_x, center_y, width, height, x_min, y_min, x_max, y_max) 

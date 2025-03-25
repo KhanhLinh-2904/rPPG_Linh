@@ -17,18 +17,20 @@ class Communicate(QObject):
     closeApp = pyqtSignal()
 
 
-def model_worker(input_queue, output_queue):
+def model_worker(input_queue, input_view, output_queue):
     """Worker process to run models."""
     run_all_models = RunAlModels()
     while True:
-        task = input_queue.get()
+        task = input_view.get()
         if task == "STOP":
             break
         # Perform model processing
         frame = task["frame"]
         result = run_all_models.run(frame)
-        output_queue.put(result)
-
+        if not output_queue.full():
+            output_queue.put(result)
+            task = input_queue.get()
+            
 
 class GUI(QMainWindow, QThread, QApplication):
     def __init__(self):
@@ -44,11 +46,12 @@ class GUI(QMainWindow, QThread, QApplication):
         self.input = self.input_rgb_camera  # input of the app is cameras
       
         # Queues for multiprocessing communication
-        self.input_queue = Queue()
-        self.output_queue = Queue()
+        self.input_queue = Queue(maxsize=1)
+        self.input_view = Queue(maxsize=1)
+        self.output_queue = Queue(maxsize=1)
         
         # Worker process for running models
-        self.worker_process = Process(target=model_worker, args=(self.input_queue, self.output_queue))
+        self.worker_process = Process(target=model_worker, args=(self.input_queue, self.input_view, self.output_queue))
         self.worker_process.start()
         # self.runAllModels = RunAlModels()
         self.status = False  # If false, not running, if true, running
@@ -450,96 +453,97 @@ class GUI(QMainWindow, QThread, QApplication):
             
     @QtCore.pyqtSlot()
     def main_loop(self):
-        color_frame = self.input.get_frame() #Capture 1 frame from Camera
-        if color_frame is not None:
-            gui_img = QImage(color_frame, color_frame.shape[1], color_frame.shape[0], color_frame.strides[0],
-                            QImage.Format_RGB888)
-            color_frame = cv2.cvtColor(color_frame, cv2.COLOR_BGR2RGB)
-            # print("shape of color frame: ", color_frame.shape)
-            self.input_queue.put({"frame": color_frame})
-            
-            self.lblDisplay.setPixmap(QPixmap(gui_img))  # show frame on GUI
-            QApplication.processEvents()
-            while not self.output_queue.empty():
-                (color_face, dif_frame, mean_frame, outputs, bpm, idx, RGB_signal_buffer, bpms) = self.output_queue.get()
-                if color_face is not None:
-                    color_face = cv2.cvtColor(color_face, cv2.COLOR_BGR2RGB)
-                    # print("type color_face: ", type(color_face))
-                    color_face = cv2.resize(color_face, (180, 180), interpolation=cv2.INTER_CUBIC)
-                    # print("shape color_face:", color_face.shape)
-                    
-                    # reshape color_face (240, 240)
-                    gui_face = QImage(color_face, color_face.shape[1], color_face.shape[0], color_face.strides[0],
-                                    QImage.Format_RGB888)
-                    self.roiDisplay.setPixmap(QPixmap(gui_face))
-                    QApplication.processEvents()
-                    
-                # if isinstance(outputs, np.ndarray):
-                #     for inum in outputs[0]:
-                #         # self.countFrame += 1
-                #         # print("Frame ", self.countFrame ,inum)
-                #         self.lblOutput.setText(f"{inum:.2f}")
-                #         QApplication.processEvents()
+        if not self.input_queue.full():
+            color_frame = self.input.get_frame() #Capture 1 frame from Camera
+            if color_frame is not None:
+                gui_img = QImage(color_frame, color_frame.shape[1], color_frame.shape[0], color_frame.strides[0],
+                                QImage.Format_RGB888)
+                color_frame = cv2.cvtColor(color_frame, cv2.COLOR_BGR2RGB)
+                # print("shape of color frame: ", color_frame.shape)
+                self.input_queue.put({"frame": color_frame})
+                self.input_view.put({"frame": color_frame})
+                self.lblDisplay.setPixmap(QPixmap(gui_img))  # show frame on GUI
+                QApplication.processEvents()
+                while not self.output_queue.empty():
+                    (color_face, mean_frame, predict, groundtruth, mae,rmse, bpm, idx, RGB_signal_buffer, bpms) = self.output_queue.get()
+                    if color_face is not None:
+                        color_face = cv2.cvtColor(color_face, cv2.COLOR_BGR2RGB)
+                        # print("type color_face: ", type(color_face))
+                        color_face = cv2.resize(color_face, (180, 180), interpolation=cv2.INTER_CUBIC)
+                        # print("shape color_face:", color_face.shape)
                         
-                #         # self.Output.setText(f"Output {self.countFrame}")
-                #         # QApplication.processEvents()
+                        # reshape color_face (240, 240)
+                        gui_face = QImage(color_face, color_face.shape[1], color_face.shape[0], color_face.strides[0],
+                                        QImage.Format_RGB888)
+                        self.roiDisplay.setPixmap(QPixmap(gui_face))
+                        QApplication.processEvents()
                         
-                if color_face is not None:
+                    # if isinstance(outputs, np.ndarray):
+                    #     for inum in outputs[0]:
+                    #         # self.countFrame += 1
+                    #         # print("Frame ", self.countFrame ,inum)
+                    #         self.lblOutput.setText(f"{inum:.2f}")
+                    #         QApplication.processEvents()
+                            
+                    #         # self.Output.setText(f"Output {self.countFrame}")
+                    #         # QApplication.processEvents()
+                            
+                    if color_face is not None:
+                        
+                        color_face = cv2.resize(color_face, (36, 36), interpolation=cv2.INTER_CUBIC)
+                        # print("type of dif_frame: ", type(dif_frame))
+                        # print("shape dif_frame: ",dif_frame.shape )
+                        gui_dif_face = QImage(color_face, color_face.shape[1], color_face.shape[0], color_face.strides[0],
+                                        QImage.Format_RGB888)
+                        self.diffDisplay.setPixmap(QPixmap(gui_dif_face))
+                        
+                        QApplication.processEvents()
+                    # if dif_frame is not None:
+                        
+                    #     # dif_frame = cv2.cvtColor(dif_frame, cv2.COLOR_BGR2RGB)
+                    #     dif_frame = cv2.resize(dif_frame, (180, 180), interpolation=cv2.INTER_CUBIC)
+                    #     # print("type of dif_frame: ", type(dif_frame))
+                    #     # print("shape dif_frame: ",dif_frame.shape )
+                    #     gui_dif_face = QImage(dif_frame, dif_frame.shape[1], dif_frame.shape[0], dif_frame.strides[0],
+                    #                     QImage.Format_RGB888)
+                    #     self.diffDisplay.setPixmap(QPixmap(gui_dif_face))
+                        
+                    #     QApplication.processEvents()
+                        
+                    if mean_frame is not None:
+                        mean_frame = cv2.cvtColor(mean_frame, cv2.COLOR_BGR2RGB)
+                        mean_frame = cv2.resize(mean_frame, (180, 180), interpolation=cv2.INTER_CUBIC)
+                        gui_mean_face = QImage(mean_frame, mean_frame.shape[1], mean_frame.shape[0], mean_frame.strides[0],
+                                        QImage.Format_RGB888)
+                        self.meanDisplay.setPixmap(QPixmap(gui_mean_face))
+                        
+                    self.update_bpm_and_fre(bpm)
                     
-                    color_face = cv2.resize(color_face, (36, 36), interpolation=cv2.INTER_CUBIC)
-                    # print("type of dif_frame: ", type(dif_frame))
-                    # print("shape dif_frame: ",dif_frame.shape )
-                    gui_dif_face = QImage(color_face, color_face.shape[1], color_face.shape[0], color_face.strides[0],
-                                    QImage.Format_RGB888)
-                    self.diffDisplay.setPixmap(QPixmap(gui_dif_face))
-                    
-                    QApplication.processEvents()
-                # if dif_frame is not None:
-                    
-                #     # dif_frame = cv2.cvtColor(dif_frame, cv2.COLOR_BGR2RGB)
-                #     dif_frame = cv2.resize(dif_frame, (180, 180), interpolation=cv2.INTER_CUBIC)
-                #     # print("type of dif_frame: ", type(dif_frame))
-                #     # print("shape dif_frame: ",dif_frame.shape )
-                #     gui_dif_face = QImage(dif_frame, dif_frame.shape[1], dif_frame.shape[0], dif_frame.strides[0],
-                #                     QImage.Format_RGB888)
-                #     self.diffDisplay.setPixmap(QPixmap(gui_dif_face))
-                    
-                #     QApplication.processEvents()
-                    
-                if mean_frame is not None:
-                    mean_frame = cv2.cvtColor(mean_frame, cv2.COLOR_BGR2RGB)
-                    mean_frame = cv2.resize(mean_frame, (180, 180), interpolation=cv2.INTER_CUBIC)
-                    gui_mean_face = QImage(mean_frame, mean_frame.shape[1], mean_frame.shape[0], mean_frame.strides[0],
-                                    QImage.Format_RGB888)
-                    self.meanDisplay.setPixmap(QPixmap(gui_mean_face))
-                    
-                self.update_bpm_and_fre(bpm)
-                
-                if len(bpms) > 15:
-                    # print("===========: ",len(self.runAllModels.bpms))
-                    # print("self.runAllModels.bpms: ",self.runAllModels.bpms)
-                    
-                    for i in range(3, 0, -1):
-                        try:
-                            if(len(bpms[-5 * i:-5 * (i - 1)])==0):
-                                continue
-                            self.smooth_bpms.append(np.mean(bpms[-5 * i:-5 * (i - 1)]))
-                            # print("self.smooth_bpms: ",self.smooth_bpms)
+                    if len(bpms) > 15:
+                        # print("===========: ",len(self.runAllModels.bpms))
+                        # print("self.runAllModels.bpms: ",self.runAllModels.bpms)
+                        
+                        for i in range(3, 0, -1):
+                            try:
+                                if(len(bpms[-5 * i:-5 * (i - 1)])==0):
+                                    continue
+                                self.smooth_bpms.append(np.mean(bpms[-5 * i:-5 * (i - 1)]))
+                                # print("self.smooth_bpms: ",self.smooth_bpms)
 
-                        except:
-                            print("lblHR: eror in mean ")
-                    self.avg_bpms = np.mean(self.smooth_bpms)
-                    # self.update_bpm_and_hrv_and_fre(self.avg_bpms)
-                    self.estimatedHR_and_arrhythmia(self.avg_bpms)
+                            except:
+                                print("lblHR: eror in mean ")
+                        self.avg_bpms = np.mean(self.smooth_bpms)
+                        # self.update_bpm_and_hrv_and_fre(self.avg_bpms)
+                        self.estimatedHR_and_arrhythmia(self.avg_bpms)
 
-                # if self.runAllModels.bpms.__len__() > 1:
-                #     self.estimatedHR_and_arrhythmia(self.runAllModels.bpms)
-                
-                    # self.avg_bpms.append(np.mean(self.runAllModels.bpms))
+                    # if self.runAllModels.bpms.__len__() > 1:
+                    #     self.estimatedHR_and_arrhythmia(self.runAllModels.bpms)
+                    
+                        # self.avg_bpms.append(np.mean(self.runAllModels.bpms))
 
-                self.key_handler()  # if not the GUI cant show anything, to make the gui refresh after the end of loop
-                self.signal_Plt.clear()
-                self.signal_Plt.plot(idx, RGB_signal_buffer, pen='r')  # Plot green signal
+                    self.key_handler()  # if not the GUI cant show anything, to make the gui refresh after the end of loop
+                    self.signal_Plt.clear()
+                    self.signal_Plt.plot(idx, RGB_signal_buffer, pen='r')  # Plot green signal
         
     def estimatedHR_and_arrhythmia(self, processed_bpm):
         estimated_HR = round(np.mean(processed_bpm))

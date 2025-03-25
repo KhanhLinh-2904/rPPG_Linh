@@ -76,7 +76,7 @@ class RunAlModels(object):
     def run(self, rgb_frame):
         dif_frame = None
         mean_frame = None
-        color_face_non_resized = self.fd.face_landmark(rgb_frame)
+        color_face_non_resized = self.fd.face_landmark_center(rgb_frame)
         if color_face_non_resized is not None:
             # color_face = self.fs.face_segment(color_face)
             color_face = cv2.resize(color_face_non_resized, (36,36), dst=None, fx=0, fy=0, interpolation=cv2.INTER_CUBIC)

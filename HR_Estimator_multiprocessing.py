@@ -17,7 +17,7 @@ class Communicate(QObject):
     closeApp = pyqtSignal()
 
 
-def model_worker(input_queue,input_view, output_queue):
+def model_worker(input_queue, input_view, output_queue):
     """Worker process to run models."""
     run_all_models = RunAlModels()
     while True:
@@ -51,7 +51,7 @@ class GUI(QMainWindow, QThread, QApplication):
         self.output_queue = Queue(maxsize=1)
         
         # Worker process for running models
-        self.worker_process = Process(target=model_worker, args=(self.input_queue,self.input_view, self.output_queue))
+        self.worker_process = Process(target=model_worker, args=(self.input_queue, self.input_view, self.output_queue))
         self.worker_process.start()
         # self.runAllModels = RunAlModels()
         self.status = False  # If false, not running, if true, running
@@ -491,11 +491,11 @@ class GUI(QMainWindow, QThread, QApplication):
     def main_loop(self):
         if not self.input_queue.full():
             color_frame = self.input.get_frame() #Capture 1 frame from Camera
-            self.input.print_count()
+            # self.input.print_count()
             if color_frame is not None:
+                color_frame = cv2.cvtColor(color_frame, cv2.COLOR_BGR2RGB)
                 gui_img = QImage(color_frame, color_frame.shape[1], color_frame.shape[0], color_frame.strides[0],
                                 QImage.Format_RGB888)
-                color_frame = cv2.cvtColor(color_frame, cv2.COLOR_BGR2RGB)
                 self.input_queue.put({"frame": color_frame})
                 self.input_view.put({"frame": color_frame})
                 self.lblDisplay.setPixmap(QPixmap(gui_img))  # show frame on GUI
@@ -503,7 +503,7 @@ class GUI(QMainWindow, QThread, QApplication):
                 while not self.output_queue.empty():
                     (color_face, mean_frame, predict, groundtruth, mae,rmse, bpm, idx, RGB_signal_buffer, bpms) = self.output_queue.get()
                     if color_face is not None:
-                        color_face = cv2.cvtColor(color_face, cv2.COLOR_BGR2RGB)
+                        # color_face = cv2.cvtColor(color_face, cv2.COLOR_BGR2RGB)
                         color_face = cv2.resize(color_face, (180, 180), interpolation=cv2.INTER_CUBIC)
                         gui_face = QImage(color_face, color_face.shape[1], color_face.shape[0], color_face.strides[0],
                                         QImage.Format_RGB888)
@@ -520,7 +520,7 @@ class GUI(QMainWindow, QThread, QApplication):
                     QApplication.processEvents()
                     
                     if mean_frame is not None:
-                        mean_frame = cv2.cvtColor(mean_frame, cv2.COLOR_BGR2RGB)
+                        # mean_frame = cv2.cvtColor(mean_frame, cv2.COLOR_BGR2RGB)
                         mean_frame = cv2.resize(mean_frame, (180, 180), interpolation=cv2.INTER_CUBIC)
                         gui_mean_face = QImage(mean_frame, mean_frame.shape[1], mean_frame.shape[0], mean_frame.strides[0],
                                         QImage.Format_RGB888)
@@ -529,17 +529,17 @@ class GUI(QMainWindow, QThread, QApplication):
                         
                     self.update_bpm_and_fre(bpm)
                     
-                    # if len(bpms) > 15:
-                    #     for i in range(3, 0, -1):
-                    #         try:
-                    #             if(len(bpms[-5 * i:-5 * (i - 1)])==0):
-                    #                 continue
-                    #             self.smooth_bpms.append(np.mean(bpms[-5 * i:-5 * (i - 1)]))
+                    if len(bpms) > 15:
+                        for i in range(3, 0, -1):
+                            try:
+                                if(len(bpms[-5 * i:-5 * (i - 1)])==0):
+                                    continue
+                                self.smooth_bpms.append(np.mean(bpms[-5 * i:-5 * (i - 1)]))
 
-                    #         except:
-                    #             print("lblHR: eror in mean ")
-                    #     self.avg_bpms = np.mean(self.smooth_bpms)
-                    #     self.estimatedHR_and_arrhythmia(self.avg_bpms)
+                            except:
+                                print("lblHR: eror in mean ")
+                        self.avg_bpms = np.mean(self.smooth_bpms)
+                        self.estimatedHR_and_arrhythmia(self.avg_bpms)
 
                 
 
