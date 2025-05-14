@@ -95,9 +95,9 @@ class RunAlModels(object):
                 print("self.outputs: ", self.outputs)
                 
                 self.ten_label = self.label[self.count:self.count + self.length]
-                print("Range: ", self.count+1, self.count + self.length)
+                # print("Range: ", self.count+1, self.count + self.length)
                 self.groundtruth = np.mean(self.ten_label)
-                print("self.ten_label: ", self.ten_label)
+                # print("self.ten_label: ", self.ten_label)
                 
                 self.mae = np.mean(np.abs(self.ten_label - self.outputs))
                 self.rmse = np.sqrt(np.mean((self.ten_label - self.outputs) ** 2))
